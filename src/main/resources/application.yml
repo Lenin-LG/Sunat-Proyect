@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: facturacion-sunat
+  datasource:
+    url: jdbc:h2:mem:facturacion;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+server:
+  port: 8080
+
+# ---------------------------------------------------------------
+# Configuracion SUNAT.
+#
+# Los valores de abajo son los de PRUEBA (ambiente Beta), los mismos
+# usados en las pruebas manuales con SOAP UI / xmlsec1:
+#   RUC: 20000000001 | Usuario: MODDATOS | Password: moddatos
+#
+# password-sol y certificado-password se leen de variables de entorno
+# para no versionar credenciales en el repositorio.
+#
+# Fuente: Manual del Programador SUNAT y Pautas del servicio BETA
+# (https://cpe.sunat.gob.pe/guias-y-manuales,
+#  https://orientacion.sunat.gob.pe/12-pautas-servicio-beta)
+# ---------------------------------------------------------------
+sunat:
+  ruc: 20000000001
+  usuario-sol: MODDATOS
+  password-sol: ${SUNAT_PASSWORD_SOL:moddatos}
+  produccion: false
+  endpoint-beta: https://e-beta.sunat.gob.pe/ol-ti-itcpfegem-beta/billService
+  endpoint-produccion: https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billService
+  certificado-path: ${SUNAT_CERTIFICADO_PATH:src/main/resources/certificados/certificado_prueba.p12}
+  certificado-password: ${SUNAT_CERTIFICADO_PASSWORD:changeit}

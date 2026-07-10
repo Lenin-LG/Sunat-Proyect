@@ -1,0 +1,11 @@
+target/
+*.class
+*.log
+.idea/
+*.iml
+.vscode/
+
+# NUNCA versionar certificados ni credenciales reales
+src/main/resources/certificados/*.p12
+src/main/resources/certificados/*.pem
+.env
