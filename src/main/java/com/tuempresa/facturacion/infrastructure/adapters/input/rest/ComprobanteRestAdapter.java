@@ -39,6 +39,20 @@ public class ComprobanteRestAdapter {
         return ResponseEntity.ok(emitirComprobanteUseCase.emitir(command));
     }
 
+    @PostMapping("/nota-credito")
+    @Transactional
+    public ResponseEntity<Comprobante> emitirNotaCredito(@Valid @RequestBody ComprobanteRequest request) {
+        ComprobanteCommand command = toCommand(request, "07");
+        return ResponseEntity.ok(emitirComprobanteUseCase.emitir(command));
+    }
+
+    @PostMapping("/nota-debito")
+    @Transactional
+    public ResponseEntity<Comprobante> emitirNotaDebito(@Valid @RequestBody ComprobanteRequest request) {
+        ComprobanteCommand command = toCommand(request, "08");
+        return ResponseEntity.ok(emitirComprobanteUseCase.emitir(command));
+    }
+
     private ComprobanteCommand toCommand(ComprobanteRequest request, String tipoDocumento) {
         return ComprobanteCommand.builder()
                 .tipoDocumento(tipoDocumento)
@@ -46,12 +60,35 @@ public class ComprobanteRestAdapter {
                 .clienteTipoDocumento(request.getClienteTipoDocumento())
                 .clienteNumeroDocumento(request.getClienteNumeroDocumento())
                 .clienteNombre(request.getClienteNombre())
+                .formaPago(request.getFormaPago())
+                .detraccionCodigo(request.getDetraccionCodigo())
+                .detraccionPorcentaje(request.getDetraccionPorcentaje())
+                .detraccionMonto(request.getDetraccionMonto())
+                .descuentoGlobal(request.getDescuentoGlobal())
+                .totalImpuestoBolsa(request.getTotalImpuestoBolsa())
+                .anticipoReferencia(request.getAnticipoReferencia())
+                .saldoPendiente(request.getSaldoPendiente())
+                .cuotas(request.getCuotas() == null ? null : request.getCuotas().stream()
+                        .map(c -> ComprobanteCommand.CuotaCommand.builder()
+                                .numeroCuota(c.getNumeroCuota())
+                                .monto(c.getMonto())
+                                .fechaVencimiento(c.getFechaVencimiento() != null ? java.time.LocalDate.parse(c.getFechaVencimiento()) : null)
+                                .build())
+                        .collect(Collectors.toList()))
+                .documentoModificadoId(request.getDocumentoModificadoId())
+                .documentoModificadoTipo(request.getDocumentoModificadoTipo())
+                .notaMotivoCodigo(request.getNotaMotivoCodigo())
+                .notaMotivoDescripcion(request.getNotaMotivoDescripcion())
                 .items(request.getItems().stream()
                         .map(item -> ItemCommand.builder()
                                 .descripcion(item.getDescripcion())
                                 .cantidad(item.getCantidad())
                                 .precioUnitario(item.getPrecioUnitario())
                                 .codigoProductoSunat(item.getCodigoProductoSunat())
+                                .codigoInterno(item.getCodigoInterno())
+                                .tipoUnidad(item.getTipoUnidad())
+                                .tipoAfectacionIgv(item.getTipoAfectacionIgv())
+                                .impuestoBolsa(item.getImpuestoBolsa())
                                 .build())
                         .collect(Collectors.toList()))
                 .build();

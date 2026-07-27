@@ -2,6 +2,7 @@ package com.tuempresa.facturacion.infrastructure.adapters.output.xml;
 
 import com.tuempresa.facturacion.domain.model.Comprobante;
 import com.tuempresa.facturacion.domain.model.ComprobanteDetalle;
+import com.tuempresa.facturacion.domain.model.Cuota;
 import com.tuempresa.facturacion.domain.model.Empresa;
 import com.tuempresa.facturacion.domain.ports.out.XmlBuilderPort;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,8 @@ import java.math.RoundingMode;
 public class XmlBuilderAdapter implements XmlBuilderPort {
 
     private static final String NS_INVOICE = "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2";
+    private static final String NS_CREDIT_NOTE = "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2";
+    private static final String NS_DEBIT_NOTE = "urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2";
     private static final String NS_CAC = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2";
     private static final String NS_CBC = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
     private static final String NS_EXT = "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2";
@@ -30,81 +33,112 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
             factory.setNamespaceAware(true);
             Document doc = factory.newDocumentBuilder().newDocument();
 
-            Element invoice = ns(doc, NS_INVOICE, "Invoice");
+            String rootTag = "Invoice";
+            String nsRoot = NS_INVOICE;
+            if ("07".equals(c.getTipoDocumento())) {
+                rootTag = "CreditNote";
+                nsRoot = NS_CREDIT_NOTE;
+            } else if ("08".equals(c.getTipoDocumento())) {
+                rootTag = "DebitNote";
+                nsRoot = NS_DEBIT_NOTE;
+            }
 
-            invoice.setAttributeNS(
-                "http://www.w3.org/2000/xmlns/",
-                "xmlns",
-                NS_INVOICE
-            );
+            Element root = doc.createElementNS(nsRoot, rootTag);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns", nsRoot);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:cac", NS_CAC);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:cbc", NS_CBC);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:ext", NS_EXT);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:ds", NS_DS);
+            doc.appendChild(root);
 
-            invoice.setAttributeNS(
-                "http://www.w3.org/2000/xmlns/",
-                "xmlns:cac",
-                NS_CAC
-            );
+            root.appendChild(buildUblExtensions(doc));
+            root.appendChild(cbc(doc, "UBLVersionID", "2.1"));
+            root.appendChild(cbc(doc, "CustomizationID", "2.0"));
+            root.appendChild(cbc(doc, "ID", c.getSerie() + "-" + c.getNumero()));
+            root.appendChild(cbc(doc, "IssueDate", c.getFechaEmision().toString()));
+            root.appendChild(cbc(doc, "IssueTime", "00:00:00"));
 
-            invoice.setAttributeNS(
-                "http://www.w3.org/2000/xmlns/",
-                "xmlns:cbc",
-                NS_CBC
-            );
-
-            invoice.setAttributeNS(
-                "http://www.w3.org/2000/xmlns/",
-                "xmlns:ext",
-                NS_EXT
-            );
-
-            invoice.setAttributeNS(
-                "http://www.w3.org/2000/xmlns/",
-                "xmlns:ds",
-                NS_DS
-            );
-
-            doc.appendChild(invoice);
-
-            invoice.appendChild(buildUblExtensions(doc));
-            invoice.appendChild(cbc(doc, "UBLVersionID", "2.1"));
-            invoice.appendChild(cbc(doc, "CustomizationID", "2.0"));
-            invoice.appendChild(cbc(doc, "ID", c.getSerie() + "-" + c.getNumero()));
-            invoice.appendChild(cbc(doc, "IssueDate", c.getFechaEmision().toString()));
-            invoice.appendChild(cbc(doc, "IssueTime", "00:00:00"));
-
-            Element tipoDoc = cbc(doc, "InvoiceTypeCode", c.getTipoDocumento());
-            tipoDoc.setAttribute("listID", "0101");
-            tipoDoc.setAttribute("listAgencyName", "PE:SUNAT");
-            tipoDoc.setAttribute("listName", "Tipo de Documento");
-            tipoDoc.setAttribute("listURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01");
-            invoice.appendChild(tipoDoc);
+            if ("01".equals(c.getTipoDocumento()) || "03".equals(c.getTipoDocumento())) {
+                Element tipoDoc = cbc(doc, "InvoiceTypeCode", c.getTipoDocumento());
+                tipoDoc.setAttribute("listID", "0101");
+                tipoDoc.setAttribute("listAgencyName", "PE:SUNAT");
+                tipoDoc.setAttribute("listName", "Tipo de Documento");
+                tipoDoc.setAttribute("listURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo01");
+                root.appendChild(tipoDoc);
+            }
 
             Element note = cbc(doc, "Note", "IMPORTE EN LETRAS PENDIENTE DE CONVERSION");
             note.setAttribute("languageLocaleID", "1000");
-            invoice.appendChild(note);
+            root.appendChild(note);
 
             Element moneda = cbc(doc, "DocumentCurrencyCode", "PEN");
             moneda.setAttribute("listID", "ISO 4217 Alpha");
             moneda.setAttribute("listName", "Currency");
             moneda.setAttribute("listAgencyName", "United Nations Economic Commission for Europe");
-            invoice.appendChild(moneda);
+            root.appendChild(moneda);
 
-            invoice.appendChild(buildFirmaNegocio(doc, empresa));
-            invoice.appendChild(buildSupplierParty(doc, empresa));
-            invoice.appendChild(buildCustomerParty(doc, c));
+            // Notas de Crédito / Débito: Referencia al documento afectado
+            if ("07".equals(c.getTipoDocumento()) || "08".equals(c.getTipoDocumento())) {
+                Element discrepancy = cac(doc, "DiscrepancyResponse");
+                discrepancy.appendChild(cbc(doc, "ReferenceID", c.getDocumentoModificadoId()));
+                discrepancy.appendChild(cbc(doc, "ResponseCode", c.getNotaMotivoCodigo()));
+                discrepancy.appendChild(cbc(doc, "Description", c.getNotaMotivoDescripcion()));
+                root.appendChild(discrepancy);
 
-            if ("01".equals(c.getTipoDocumento()) || "03".equals(c.getTipoDocumento())) {
-                Element paymentTerms = cac(doc, "PaymentTerms");
-                paymentTerms.appendChild(cbc(doc, "ID", "FormaPago"));
-                paymentTerms.appendChild(cbc(doc, "PaymentMeansID", "Contado"));
-                invoice.appendChild(paymentTerms);
+                Element billingRef = cac(doc, "BillingReference");
+                Element docRef = cac(doc, "InvoiceDocumentReference");
+                docRef.appendChild(cbc(doc, "ID", c.getDocumentoModificadoId()));
+                docRef.appendChild(cbc(doc, "DocumentTypeCode", c.getDocumentoModificadoTipo()));
+                billingRef.appendChild(docRef);
+                root.appendChild(billingRef);
             }
 
-            invoice.appendChild(buildTaxTotal(doc, c));
-            invoice.appendChild(buildLegalMonetaryTotal(doc, c));
+            root.appendChild(buildFirmaNegocio(doc, empresa));
+            root.appendChild(buildSupplierParty(doc, empresa));
+            root.appendChild(buildCustomerParty(doc, c));
+
+            // PaymentTerms (Contado / Crédito con Cuotas / Detracciones)
+            if ("01".equals(c.getTipoDocumento()) || "03".equals(c.getTipoDocumento())) {
+                if ("CREDITO".equalsIgnoreCase(c.getFormaPago())) {
+                    Element ptForma = cac(doc, "PaymentTerms");
+                    ptForma.appendChild(cbc(doc, "ID", "FormaPago"));
+                    ptForma.appendChild(cbc(doc, "PaymentMeansID", "Credito"));
+                    ptForma.appendChild(cbcMoney(doc, "Amount", c.getSaldoPendiente()));
+                    root.appendChild(ptForma);
+
+                    int cuotaIndex = 1;
+                    for (Cuota cuota : c.getCuotas()) {
+                        Element ptCuota = cac(doc, "PaymentTerms");
+                        ptCuota.appendChild(cbc(doc, "ID", "FormaPago"));
+                        ptCuota.appendChild(cbc(doc, "PaymentMeansID", "Cuota" + String.format("%03d", cuotaIndex++)));
+                        ptCuota.appendChild(cbcMoney(doc, "Amount", cuota.getMonto()));
+                        ptCuota.appendChild(cbc(doc, "PaymentDueDate", cuota.getFechaVencimiento().toString()));
+                        root.appendChild(ptCuota);
+                    }
+                } else {
+                    Element paymentTerms = cac(doc, "PaymentTerms");
+                    paymentTerms.appendChild(cbc(doc, "ID", "FormaPago"));
+                    paymentTerms.appendChild(cbc(doc, "PaymentMeansID", "Contado"));
+                    root.appendChild(paymentTerms);
+                }
+
+                // Detracciones
+                if (c.getDetraccionCodigo() != null && !c.getDetraccionCodigo().isBlank()) {
+                    Element ptDetraccion = cac(doc, "PaymentTerms");
+                    ptDetraccion.appendChild(cbc(doc, "ID", "Detraccion"));
+                    ptDetraccion.appendChild(cbc(doc, "PaymentMeansID", c.getDetraccionCodigo()));
+                    ptDetraccion.appendChild(cbc(doc, "PaymentPercent", c.getDetraccionPorcentaje().toPlainString()));
+                    ptDetraccion.appendChild(cbcMoney(doc, "Amount", c.getDetraccionMonto()));
+                    root.appendChild(ptDetraccion);
+                }
+            }
+
+            root.appendChild(buildTaxTotal(doc, c));
+            root.appendChild(buildLegalMonetaryTotal(doc, c));
 
             int lineId = 1;
             for (ComprobanteDetalle item : c.getDetalles()) {
-                invoice.appendChild(buildInvoiceLine(doc, item, lineId++));
+                root.appendChild(buildLine(doc, item, lineId++, c.getTipoDocumento()));
             }
 
             return doc;
@@ -122,6 +156,7 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         extensions.appendChild(extension);
         return extensions;
     }
+
     private Element buildFirmaNegocio(Document doc, Empresa empresa) {
         Element signature = cac(doc, "Signature");
         signature.appendChild(cbc(doc, "ID", empresa.getRuc()));
@@ -217,8 +252,13 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
     }
 
     private Element buildTaxTotal(Document doc, Comprobante c) {
+        BigDecimal totalTax = c.getTotalIgv();
+        if (c.getTotalImpuestoBolsa() != null) {
+            totalTax = totalTax.add(c.getTotalImpuestoBolsa());
+        }
+
         Element taxTotal = cac(doc, "TaxTotal");
-        taxTotal.appendChild(cbcMoney(doc, "TaxAmount", c.getTotalIgv()));
+        taxTotal.appendChild(cbcMoney(doc, "TaxAmount", totalTax));
 
         Element subtotal = cac(doc, "TaxSubtotal");
         subtotal.appendChild(cbcMoney(doc, "TaxableAmount", c.getTotalGravada()));
@@ -235,28 +275,60 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         scheme.appendChild(cbc(doc, "TaxTypeCode", "VAT"));
         category.appendChild(scheme);
         subtotal.appendChild(category);
-
         taxTotal.appendChild(subtotal);
+
+        if (c.getTotalImpuestoBolsa() != null && c.getTotalImpuestoBolsa().compareTo(BigDecimal.ZERO) > 0) {
+            Element subtotalBolsa = cac(doc, "TaxSubtotal");
+            subtotalBolsa.appendChild(cbcMoney(doc, "TaxAmount", c.getTotalImpuestoBolsa()));
+
+            Element catBolsa = cac(doc, "TaxCategory");
+            Element schBolsa = cac(doc, "TaxScheme");
+            Element schBolsaId = cbc(doc, "ID", "7152");
+            schBolsaId.setAttribute("schemeName", "Codigo de tributos");
+            schBolsaId.setAttribute("schemeAgencyName", "PE:SUNAT");
+            schBolsaId.setAttribute("schemeURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05");
+            schBolsa.appendChild(schBolsaId);
+            schBolsa.appendChild(cbc(doc, "Name", "ICBPER"));
+            schBolsa.appendChild(cbc(doc, "TaxTypeCode", "OTH"));
+            catBolsa.appendChild(schBolsa);
+            subtotalBolsa.appendChild(catBolsa);
+            taxTotal.appendChild(subtotalBolsa);
+        }
+
         return taxTotal;
     }
 
     private Element buildLegalMonetaryTotal(Document doc, Comprobante c) {
-        Element total = cac(doc, "LegalMonetaryTotal");
+        String monetaryTagName = "LegalMonetaryTotal";
+        if ("08".equals(c.getTipoDocumento())) {
+            monetaryTagName = "RequestedMonetaryTotal";
+        }
+        Element total = doc.createElementNS(NS_CAC, "cac:" + monetaryTagName);
         total.appendChild(cbcMoney(doc, "LineExtensionAmount", c.getTotalGravada()));
         total.appendChild(cbcMoney(doc, "TaxInclusiveAmount", c.getTotalPagar()));
-        total.appendChild(cbcMoney(doc, "AllowanceTotalAmount", BigDecimal.ZERO));
+        total.appendChild(cbcMoney(doc, "AllowanceTotalAmount", c.getDescuentoGlobal()));
         total.appendChild(cbcMoney(doc, "ChargeTotalAmount", BigDecimal.ZERO));
         total.appendChild(cbcMoney(doc, "PrepaidAmount", BigDecimal.ZERO));
         total.appendChild(cbcMoney(doc, "PayableAmount", c.getTotalPagar()));
         return total;
     }
 
-    private Element buildInvoiceLine(Document doc, ComprobanteDetalle item, int lineId) {
-        Element line = cac(doc, "InvoiceLine");
+    private Element buildLine(Document doc, ComprobanteDetalle item, int lineId, String tipoCpe) {
+        String lineTag = "InvoiceLine";
+        String qtyTag = "InvoicedQuantity";
+        if ("07".equals(tipoCpe)) {
+            lineTag = "CreditNoteLine";
+            qtyTag = "CreditedQuantity";
+        } else if ("08".equals(tipoCpe)) {
+            lineTag = "DebitNoteLine";
+            qtyTag = "DebitedQuantity";
+        }
+
+        Element line = cac(doc, lineTag);
         line.appendChild(cbc(doc, "ID", String.valueOf(lineId)));
 
-        Element cantidad = cbc(doc, "InvoicedQuantity", item.getCantidad().toPlainString());
-        cantidad.setAttribute("unitCode", "NIU");
+        Element cantidad = cbc(doc, qtyTag, item.getCantidad().toPlainString());
+        cantidad.setAttribute("unitCode", item.getTipoUnidad());
         line.appendChild(cantidad);
 
         BigDecimal valorVenta = item.getValorVenta().setScale(2, RoundingMode.HALF_UP);
@@ -278,18 +350,28 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         line.appendChild(pricingRef);
 
         BigDecimal igvItem = valorVenta.multiply(IGV_PORCENTAJE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal bolsaAmount = BigDecimal.ZERO;
+        if (item.getImpuestoBolsa() != null && item.getImpuestoBolsa().compareTo(BigDecimal.ZERO) > 0) {
+            bolsaAmount = item.getImpuestoBolsa().multiply(item.getCantidad()).setScale(2, RoundingMode.HALF_UP);
+        }
+        BigDecimal totalTaxItem = igvItem.add(bolsaAmount);
+
         Element taxTotal = cac(doc, "TaxTotal");
-        taxTotal.appendChild(cbcMoney(doc, "TaxAmount", igvItem));
+        taxTotal.appendChild(cbcMoney(doc, "TaxAmount", totalTaxItem));
+
         Element subtotal = cac(doc, "TaxSubtotal");
         subtotal.appendChild(cbcMoney(doc, "TaxableAmount", valorVenta));
         subtotal.appendChild(cbcMoney(doc, "TaxAmount", igvItem));
         Element category = cac(doc, "TaxCategory");
         category.appendChild(cbc(doc, "Percent", "18"));
-        Element exemptionCode = cbc(doc, "TaxExemptionReasonCode", "10");
+
+        // SUNAT Catálogo 07 Afectación del IGV
+        Element exemptionCode = cbc(doc, "TaxExemptionReasonCode", item.getTipoAfectacionIgv());
         exemptionCode.setAttribute("listAgencyName", "PE:SUNAT");
         exemptionCode.setAttribute("listName", "Codigo de Tipo de Afectacion del IGV");
         exemptionCode.setAttribute("listURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo07");
         category.appendChild(exemptionCode);
+
         Element scheme = cac(doc, "TaxScheme");
         scheme.appendChild(cbc(doc, "ID", "1000"));
         scheme.appendChild(cbc(doc, "Name", "IGV"));
@@ -297,6 +379,30 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         category.appendChild(scheme);
         subtotal.appendChild(category);
         taxTotal.appendChild(subtotal);
+
+        if (bolsaAmount.compareTo(BigDecimal.ZERO) > 0) {
+            Element subtotalBolsa = cac(doc, "TaxSubtotal");
+            subtotalBolsa.appendChild(cbcMoney(doc, "TaxAmount", bolsaAmount));
+
+            Element measure = cbc(doc, "BaseUnitMeasure", item.getCantidad().setScale(0, RoundingMode.HALF_UP).toPlainString());
+            measure.setAttribute("unitCode", "NIU");
+            subtotalBolsa.appendChild(measure);
+
+            subtotalBolsa.appendChild(cbcMoney(doc, "PerUnitAmountRate", item.getImpuestoBolsa()));
+
+            Element catBolsa = cac(doc, "TaxCategory");
+            Element schBolsa = cac(doc, "TaxScheme");
+            Element schBolsaId = cbc(doc, "ID", "7152");
+            schBolsaId.setAttribute("schemeName", "Codigo de tributos");
+            schBolsaId.setAttribute("schemeAgencyName", "PE:SUNAT");
+            schBolsaId.setAttribute("schemeURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05");
+            schBolsa.appendChild(schBolsaId);
+            schBolsa.appendChild(cbc(doc, "Name", "ICBPER"));
+            schBolsa.appendChild(cbc(doc, "TaxTypeCode", "OTH"));
+            catBolsa.appendChild(schBolsa);
+            subtotalBolsa.appendChild(catBolsa);
+            taxTotal.appendChild(subtotalBolsa);
+        }
         line.appendChild(taxTotal);
 
         Element itemEl = cac(doc, "Item");
@@ -329,9 +435,72 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         return el;
     }
 
+    private Element cbc(Document doc, String localName, String value, String ns) {
+        Element el = doc.createElementNS(ns, "sac:" + localName);
+        el.setTextContent(value);
+        return el;
+    }
+
     private Element cbcMoney(Document doc, String localName, BigDecimal amount) {
         Element el = cbc(doc, localName, amount.setScale(2, RoundingMode.HALF_UP).toPlainString());
         el.setAttribute("currencyID", "PEN");
         return el;
+    }
+
+    @Override
+    public Document construirBaja(Comprobante c, Empresa empresa, String motivo, String idBaja) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            Document doc = factory.newDocumentBuilder().newDocument();
+
+            String nsVoided = "urn:sunat:names:specification:ubl:peru:schema:xsd:VoidedDocuments-1";
+            String nsSac = "urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1";
+
+            Element root = doc.createElementNS(nsVoided, "VoidedDocuments");
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns", nsVoided);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:cac", NS_CAC);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:cbc", NS_CBC);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:sac", nsSac);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:ext", NS_EXT);
+            root.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:ds", NS_DS);
+            doc.appendChild(root);
+
+            root.appendChild(buildUblExtensions(doc));
+            root.appendChild(cbc(doc, "UBLVersionID", "2.0"));
+            root.appendChild(cbc(doc, "CustomizationID", "1.0"));
+            root.appendChild(cbc(doc, "ID", idBaja));
+            root.appendChild(cbc(doc, "ReferenceDate", c.getFechaEmision().toString()));
+            root.appendChild(cbc(doc, "IssueDate", java.time.LocalDate.now().toString()));
+
+            root.appendChild(buildFirmaNegocio(doc, empresa));
+            root.appendChild(buildSupplierPartyBaja(doc, empresa));
+
+            Element line = doc.createElementNS(nsSac, "sac:VoidedDocumentsLine");
+            line.appendChild(cbc(doc, "LineID", "1"));
+            line.appendChild(cbc(doc, "DocumentTypeCode", c.getTipoDocumento()));
+            line.appendChild(cbc(doc, "DocumentSerialID", c.getSerie(), nsSac));
+            line.appendChild(cbc(doc, "DocumentNumberID", String.valueOf(c.getNumero()), nsSac));
+            line.appendChild(cbc(doc, "VoidReasonDescription", motivo, nsSac));
+            root.appendChild(line);
+
+            return doc;
+        } catch (Exception e) {
+            throw new IllegalStateException("Error construyendo XML de Baja", e);
+        }
+    }
+
+    private Element buildSupplierPartyBaja(Document doc, Empresa empresa) {
+        Element supplierParty = cac(doc, "AccountingSupplierParty");
+        supplierParty.appendChild(cbc(doc, "CustomerAssignedAccountID", empresa.getRuc()));
+        supplierParty.appendChild(cbc(doc, "AdditionalAccountID", "6"));
+
+        Element party = cac(doc, "Party");
+        Element legalEntity = cac(doc, "PartyLegalEntity");
+        legalEntity.appendChild(cbc(doc, "RegistrationName", empresa.getRazonSocial()));
+        party.appendChild(legalEntity);
+        supplierParty.appendChild(party);
+
+        return supplierParty;
     }
 }

@@ -6,4 +6,5 @@ import org.w3c.dom.Document;
 
 public interface XmlBuilderPort {
     Document construir(Comprobante comprobante, Empresa empresa);
+    Document construirBaja(Comprobante comprobante, Empresa empresa, String motivo, String idBaja);
 }

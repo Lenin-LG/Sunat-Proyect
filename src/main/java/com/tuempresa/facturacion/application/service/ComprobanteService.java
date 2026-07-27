@@ -26,6 +26,8 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
     private final XmlBuilderPort xmlBuilderPort;
     private final FirmaDigitalPort firmaDigitalPort;
     private final SunatSoapPort sunatSoapPort;
+    private final ProductoPersistencePort productoPersistencePort;
+    private final KardexPersistencePort kardexPersistencePort;
     private final String rucEmisor;
     private final PrivateKey privateKey;
     private final X509Certificate certificado;
@@ -35,6 +37,8 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
                               XmlBuilderPort xmlBuilderPort,
                               FirmaDigitalPort firmaDigitalPort,
                               SunatSoapPort sunatSoapPort,
+                              ProductoPersistencePort productoPersistencePort,
+                              KardexPersistencePort kardexPersistencePort,
                               String rucEmisor,
                               PrivateKey privateKey,
                               X509Certificate certificado) {
@@ -43,6 +47,8 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
         this.xmlBuilderPort = xmlBuilderPort;
         this.firmaDigitalPort = firmaDigitalPort;
         this.sunatSoapPort = sunatSoapPort;
+        this.productoPersistencePort = productoPersistencePort;
+        this.kardexPersistencePort = kardexPersistencePort;
         this.rucEmisor = rucEmisor;
         this.privateKey = privateKey;
         this.certificado = certificado;
@@ -60,8 +66,30 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
         Comprobante comprobante = construirEntidad(command, empresa);
         comprobante = comprobantePersistencePort.save(comprobante);
 
+        // Descontar stock e ingresar Kardex si aplica
+        for (ComprobanteDetalle detalle : comprobante.getDetalles()) {
+            if (detalle.getCodigoInterno() != null && !detalle.getCodigoInterno().isBlank()) {
+                productoPersistencePort.findByCodigo(detalle.getCodigoInterno()).ifPresent(prod -> {
+                    BigDecimal nuevoStock = prod.getStockActual().subtract(detalle.getCantidad());
+                    prod.setStockActual(nuevoStock);
+                    productoPersistencePort.save(prod);
+
+                    kardexPersistencePort.save(com.tuempresa.facturacion.domain.model.Kardex.builder()
+                            .productoId(prod.getId())
+                            .tipoMovimiento("VENTA")
+                            .cantidad(detalle.getCantidad())
+                            .precioUnitario(detalle.getPrecioUnitario())
+                            .stockResultante(nuevoStock)
+                            .creadoEn(LocalDateTime.now())
+                            .build());
+                });
+            }
+        }
+
         Document xml = xmlBuilderPort.construir(comprobante, empresa);
-        Document xmlFirmado = firmaDigitalPort.firmar(xml, privateKey, certificado);
+        com.tuempresa.facturacion.infrastructure.config.DynamicCertLoader.CertKeys keys = 
+                com.tuempresa.facturacion.infrastructure.config.DynamicCertLoader.load(empresa, privateKey, certificado);
+        Document xmlFirmado = firmaDigitalPort.firmar(xml, keys.privateKey, keys.certificate);
         try {
             javax.xml.transform.TransformerFactory.newInstance().newTransformer()
                 .transform(new javax.xml.transform.dom.DOMSource(xmlFirmado),
@@ -85,6 +113,32 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
         comprobante.setClienteNumeroDocumento(command.getClienteNumeroDocumento());
         comprobante.setClienteNombre(command.getClienteNombre());
 
+        // Campos avanzados
+        comprobante.setFormaPago(command.getFormaPago() != null ? command.getFormaPago() : "CONTADO");
+        comprobante.setDetraccionCodigo(command.getDetraccionCodigo());
+        comprobante.setDetraccionPorcentaje(command.getDetraccionPorcentaje());
+        comprobante.setDetraccionMonto(command.getDetraccionMonto());
+        comprobante.setDescuentoGlobal(command.getDescuentoGlobal() != null ? command.getDescuentoGlobal() : BigDecimal.ZERO);
+        comprobante.setTotalImpuestoBolsa(command.getTotalImpuestoBolsa() != null ? command.getTotalImpuestoBolsa() : BigDecimal.ZERO);
+        comprobante.setAnticipoReferencia(command.getAnticipoReferencia());
+        comprobante.setSaldoPendiente(command.getSaldoPendiente() != null ? command.getSaldoPendiente() : BigDecimal.ZERO);
+
+        // Notas de Crédito / Débito
+        comprobante.setDocumentoModificadoId(command.getDocumentoModificadoId());
+        comprobante.setDocumentoModificadoTipo(command.getDocumentoModificadoTipo());
+        comprobante.setNotaMotivoCodigo(command.getNotaMotivoCodigo());
+        comprobante.setNotaMotivoDescripcion(command.getNotaMotivoDescripcion());
+
+        if (command.getCuotas() != null) {
+            for (ComprobanteCommand.CuotaCommand cuotaCmd : command.getCuotas()) {
+                comprobante.getCuotas().add(com.tuempresa.facturacion.domain.model.Cuota.builder()
+                        .numeroCuota(cuotaCmd.getNumeroCuota())
+                        .monto(cuotaCmd.getMonto())
+                        .fechaVencimiento(cuotaCmd.getFechaVencimiento())
+                        .build());
+            }
+        }
+
         BigDecimal totalGravada = BigDecimal.ZERO;
         for (ItemCommand itemReq : command.getItems()) {
             ComprobanteDetalle detalle = new ComprobanteDetalle();
@@ -92,16 +146,20 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
             detalle.setCantidad(itemReq.getCantidad());
             detalle.setPrecioUnitario(itemReq.getPrecioUnitario());
             detalle.setCodigoProductoSunat(itemReq.getCodigoProductoSunat());
+            detalle.setCodigoInterno(itemReq.getCodigoInterno());
+            detalle.setTipoUnidad(itemReq.getTipoUnidad() != null ? itemReq.getTipoUnidad() : "NIU");
+            detalle.setTipoAfectacionIgv(itemReq.getTipoAfectacionIgv() != null ? itemReq.getTipoAfectacionIgv() : "10");
+            detalle.setImpuestoBolsa(itemReq.getImpuestoBolsa() != null ? itemReq.getImpuestoBolsa() : BigDecimal.ZERO);
             comprobante.getDetalles().add(detalle);
             totalGravada = totalGravada.add(detalle.getValorVenta());
         }
 
-        totalGravada = totalGravada.setScale(2, RoundingMode.HALF_UP);
+        totalGravada = totalGravada.subtract(comprobante.getDescuentoGlobal()).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalIgv = totalGravada.multiply(IGV).setScale(2, RoundingMode.HALF_UP);
 
         comprobante.setTotalGravada(totalGravada);
         comprobante.setTotalIgv(totalIgv);
-        comprobante.setTotalPagar(totalGravada.add(totalIgv));
+        comprobante.setTotalPagar(totalGravada.add(totalIgv).add(comprobante.getTotalImpuestoBolsa()));
 
         return comprobante;
     }
@@ -114,10 +172,15 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
 
     private void actualizarEstado(Comprobante comprobante, RespuestaSunat respuesta) {
         comprobante.setEnviadoEn(LocalDateTime.now());
-        comprobante.setSunatResponseCode(respuesta.getResponseCode());
-        comprobante.setSunatDescription(respuesta.getDescription());
+        comprobante.setSunatResponseCode(truncate(respuesta.getResponseCode(), 255));
+        comprobante.setSunatDescription(truncate(respuesta.getDescription(), 1000));
         comprobante.setEstado(respuesta.isAceptado()
                 ? Comprobante.EstadoComprobante.ACEPTADO
                 : Comprobante.EstadoComprobante.RECHAZADO);
+    }
+
+    private String truncate(String str, int length) {
+        if (str == null) return null;
+        return str.length() > length ? str.substring(0, length) : str;
     }
 }
