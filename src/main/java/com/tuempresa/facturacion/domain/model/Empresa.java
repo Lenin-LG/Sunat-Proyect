@@ -17,4 +17,11 @@ public class Empresa {
     private String provincia;
     private String distrito;
     private String direccionFiscal;
+    
+    // Credenciales de Produccion y Certificado
+    private String usuarioSolProduccion;
+    private String passwordSolProduccion;
+    private boolean modoProduccion;
+    private String certificadoBase64;
+    private String certificadoPassword;
 }

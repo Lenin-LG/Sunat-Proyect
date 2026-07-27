@@ -38,4 +38,19 @@ public class EmpresaEntity {
 
     @Column(nullable = false)
     private String direccionFiscal;
+
+    @Column(name = "usuario_sol_produccion")
+    private String usuarioSolProduccion;
+
+    @Column(name = "password_sol_produccion")
+    private String passwordSolProduccion;
+
+    @Column(name = "modo_produccion")
+    private boolean modoProduccion;
+
+    @Column(name = "certificado_base64")
+    private String certificadoBase64;
+
+    @Column(name = "certificado_password")
+    private String certificadoPassword;
 }

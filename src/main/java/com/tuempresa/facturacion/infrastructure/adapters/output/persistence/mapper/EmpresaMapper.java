@@ -19,6 +19,11 @@ public class EmpresaMapper {
         domain.setProvincia(entity.getProvincia());
         domain.setDistrito(entity.getDistrito());
         domain.setDireccionFiscal(entity.getDireccionFiscal());
+        domain.setUsuarioSolProduccion(entity.getUsuarioSolProduccion());
+        domain.setPasswordSolProduccion(entity.getPasswordSolProduccion());
+        domain.setModoProduccion(entity.isModoProduccion());
+        domain.setCertificadoBase64(entity.getCertificadoBase64());
+        domain.setCertificadoPassword(entity.getCertificadoPassword());
         return domain;
     }
 
@@ -36,6 +41,11 @@ public class EmpresaMapper {
         entity.setProvincia(domain.getProvincia());
         entity.setDistrito(domain.getDistrito());
         entity.setDireccionFiscal(domain.getDireccionFiscal());
+        entity.setUsuarioSolProduccion(domain.getUsuarioSolProduccion());
+        entity.setPasswordSolProduccion(domain.getPasswordSolProduccion());
+        entity.setModoProduccion(domain.isModoProduccion());
+        entity.setCertificadoBase64(domain.getCertificadoBase64());
+        entity.setCertificadoPassword(domain.getCertificadoPassword());
         return entity;
     }
 }
