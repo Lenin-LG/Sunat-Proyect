@@ -33,6 +33,23 @@ public class Comprobante {
     private LocalDateTime enviadoEn;
     private List<ComprobanteDetalle> detalles = new ArrayList<>();
 
+    // Campos Avanzados CPE
+    private String formaPago = "CONTADO"; // CONTADO, CREDITO
+    private String detraccionCodigo;
+    private BigDecimal detraccionPorcentaje;
+    private BigDecimal detraccionMonto;
+    private BigDecimal descuentoGlobal = BigDecimal.ZERO;
+    private BigDecimal totalImpuestoBolsa = BigDecimal.ZERO;
+    private String anticipoReferencia;
+    private BigDecimal saldoPendiente = BigDecimal.ZERO;
+    private List<Cuota> cuotas = new ArrayList<>();
+
+    // Notas de Crédito / Débito
+    private String documentoModificadoId;     // ej. F001-45
+    private String documentoModificadoTipo;   // ej. 01 (Factura)
+    private String notaMotivoCodigo;          // ej. 01 (Anulación de la operación)
+    private String notaMotivoDescripcion;     // ej. ANULACION POR ERROR DE DATOS
+
     public String getNombreArchivo(String ruc) {
         return "%s-%s-%s-%d".formatted(ruc, tipoDocumento, serie, numero);
     }

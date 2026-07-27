@@ -15,6 +15,10 @@ public class ComprobanteDetalle {
     private BigDecimal cantidad;
     private BigDecimal precioUnitario;
     private String codigoProductoSunat;
+    private String codigoInterno;
+    private String tipoUnidad = "NIU";
+    private String tipoAfectacionIgv = "10"; // Gravado - Operación Onerosa
+    private BigDecimal impuestoBolsa = BigDecimal.ZERO;
 
     public BigDecimal getValorVenta() {
         if (cantidad == null || precioUnitario == null) {

@@ -32,4 +32,16 @@ public class ComprobanteDetalleEntity {
     private BigDecimal precioUnitario;
 
     private String codigoProductoSunat;
+
+    @Column(name = "tipo_unidad", nullable = false)
+    private String tipoUnidad = "NIU";
+
+    @Column(name = "tipo_afectacion_igv", nullable = false)
+    private String tipoAfectacionIgv = "10";
+
+    @Column(name = "impuesto_bolsa", nullable = false, precision = 12, scale = 2)
+    private BigDecimal impuestoBolsa = BigDecimal.ZERO;
+
+    @Column(name = "codigo_interno")
+    private String codigoInterno;
 }

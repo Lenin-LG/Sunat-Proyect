@@ -26,6 +26,11 @@ public class ComprobantePersistenceAdapter implements ComprobantePersistencePort
     }
 
     @Override
+    public Optional<Comprobante> findById(Long id) {
+        return repository.findById(id).map(ComprobanteMapper::toDomain);
+    }
+
+    @Override
     public Optional<Comprobante> findTopByTipoDocumentoAndSerieOrderByNumeroDesc(String tipoDocumento, String serie) {
         return repository.findTopByTipoDocumentoAndSerieOrderByNumeroDesc(tipoDocumento, serie)
                 .map(ComprobanteMapper::toDomain);

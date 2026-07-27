@@ -18,4 +18,11 @@ public class ItemCommand {
     private BigDecimal cantidad;
     private BigDecimal precioUnitario;
     private String codigoProductoSunat;
+    private String codigoInterno;
+    @Builder.Default
+    private String tipoUnidad = "NIU";
+    @Builder.Default
+    private String tipoAfectacionIgv = "10";
+    @Builder.Default
+    private BigDecimal impuestoBolsa = BigDecimal.ZERO;
 }

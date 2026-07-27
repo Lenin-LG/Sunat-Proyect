@@ -22,4 +22,9 @@ public class ComprobanteItemRequest {
     private BigDecimal precioUnitario;
 
     private String codigoProductoSunat;
+
+    private String codigoInterno;
+    private String tipoUnidad = "NIU";
+    private String tipoAfectacionIgv = "10";
+    private BigDecimal impuestoBolsa = BigDecimal.ZERO;
 }
