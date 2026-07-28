@@ -1,0 +1,362 @@
+{
+	"info": {
+		"_postman_id": "c1f77d33-4f9e-4e4b-bbca-9b7e3e9d80d2",
+		"name": "SUNAT Super Mostro - ERP API",
+		"description": "Colección de peticiones Postman para interactuar con las APIs de facturación y control de inventario del ERP Java SUNAT.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Productos",
+			"item": [
+				{
+					"name": "Crear Producto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"codigo\": \"P001\",\n    \"descripcion\": \"Laptop ASUS VivoBook\",\n    \"precioUnitario\": 2500.0000,\n    \"tipoAfectacionIgvId\": \"10\",\n    \"unidadMedidaId\": \"NIU\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/productos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"productos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ingreso de Stock (Compra / Ajuste)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/productos/1/ingreso-stock?cantidad=10&costo=2000.00",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"productos",
+								"1",
+								"ingreso-stock"
+							],
+							"query": [
+								{
+									"key": "cantidad",
+									"value": "10"
+								},
+								{
+									"key": "costo",
+									"value": "2000.00"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Productos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/productos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"productos"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Clientes y Proveedores",
+			"item": [
+				{
+					"name": "Registrar Cliente Manual",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tipoEntidadId\": \"6\",\n    \"numeroDocumento\": \"20601234567\",\n    \"nombreRazonSocial\": \"INVERSIONES PEPE S.A.C.\",\n    \"direccion\": \"AV. JAVIER PRADO 456, SAN ISIDRO\",\n    \"correo\": \"ventas@inversionespepe.com\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/clientes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar y Registrar Automático RUC/DNI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/clientes/buscar-auto?tipoDoc=6&numeroDoc=20609999999",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes",
+								"buscar-auto"
+							],
+							"query": [
+								{
+									"key": "tipoDoc",
+									"value": "6"
+								},
+								{
+									"key": "numeroDoc",
+									"value": "20609999999"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Clientes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/clientes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"clientes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Comprobantes (Emisión)",
+			"item": [
+				{
+					"name": "Emitir Boleta / Factura Contado (Con desc. stock)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tipoDocumento\": \"01\",\n    \"serie\": \"F001\",\n    \"clienteTipoDocumento\": \"6\",\n    \"clienteNumeroDocumento\": \"20601234567\",\n    \"clienteNombre\": \"INVERSIONES PEPE S.A.C.\",\n    \"formaPago\": \"CONTADO\",\n    \"items\": [\n        {\n            \"descripcion\": \"Laptop ASUS VivoBook\",\n            \"cantidad\": 1.0,\n            \"precioUnitario\": 2500.00,\n            \"codigoInterno\": \"P001\",\n            \"tipoUnidad\": \"NIU\",\n            \"tipoAfectacionIgv\": \"10\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/comprobantes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"comprobantes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Emitir Factura al Crédito con Cuotas",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tipoDocumento\": \"01\",\n    \"serie\": \"F001\",\n    \"clienteTipoDocumento\": \"6\",\n    \"clienteNumeroDocumento\": \"20601234567\",\n    \"clienteNombre\": \"INVERSIONES PEPE S.A.C.\",\n    \"formaPago\": \"CREDITO\",\n    \"saldoPendiente\": 2950.00,\n    \"cuotas\": [\n        {\n            \"numeroCuota\": 1,\n            \"monto\": 1475.00,\n            \"fechaVencimiento\": \"2026-08-20\"\n        },\n        {\n            \"numeroCuota\": 2,\n            \"monto\": 1475.00,\n            \"fechaVencimiento\": \"2026-09-20\"\n        }\n    ],\n    \"items\": [\n        {\n            \"descripcion\": \"Laptop ASUS VivoBook\",\n            \"cantidad\": 1.0,\n            \"precioUnitario\": 2500.00,\n            \"codigoInterno\": \"P001\",\n            \"tipoUnidad\": \"NIU\",\n            \"tipoAfectacionIgv\": \"10\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/comprobantes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"comprobantes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Emitir Nota de Crédito",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tipoDocumento\": \"07\",\n    \"serie\": \"FN01\",\n    \"clienteTipoDocumento\": \"6\",\n    \"clienteNumeroDocumento\": \"20601234567\",\n    \"clienteNombre\": \"INVERSIONES PEPE S.A.C.\",\n    \"documentoModificadoId\": \"F001-1\",\n    \"documentoModificadoTipo\": \"01\",\n    \"notaMotivoCodigo\": \"01\",\n    \"notaMotivoDescripcion\": \"ANULACION DE LA OPERACION\",\n    \"items\": [\n        {\n            \"descripcion\": \"Laptop ASUS VivoBook\",\n            \"cantidad\": 1.0,\n            \"precioUnitario\": 2500.00,\n            \"codigoInterno\": \"P001\",\n            \"tipoUnidad\": \"NIU\",\n            \"tipoAfectacionIgv\": \"10\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/comprobantes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"comprobantes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Anulaciones (Bajas)",
+			"item": [
+				{
+					"name": "Anular Comprobante (Comunicación de Baja)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/comprobantes/1/anular?motivo=ERROR+EN+DATOS+DEL+CLIENTE",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"comprobantes",
+								"1",
+								"anular"
+							],
+							"query": [
+								{
+									"key": "motivo",
+									"value": "ERROR+EN+DATOS+DEL+CLIENTE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Ticket de Baja",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/comprobantes/1/consultar-ticket",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"comprobantes",
+								"1",
+								"consultar-ticket"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Guías de Remisión (GRE)",
+			"item": [
+				{
+					"name": "Emitir Guía de Remisión (Remitente)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tipoGuia\": \"09\",\n    \"serie\": \"T001\",\n    \"comprobanteId\": 1,\n    \"clienteId\": 1,\n    \"choferId\": 1,\n    \"vehiculoId\": 1,\n    \"motivoTraslado\": \"01\",\n    \"pesoTotal\": 15.50\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/guias",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"guias"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

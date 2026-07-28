@@ -6,6 +6,7 @@ import com.tuempresa.facturacion.domain.ports.in.dto.ComprobanteCommand;
 import com.tuempresa.facturacion.domain.ports.in.dto.ItemCommand;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
@@ -14,6 +15,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@ActiveProfiles("h2")
 class ComprobanteServiceIT {
 
     @Autowired

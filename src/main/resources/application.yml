@@ -1,22 +1,8 @@
 spring:
   application:
     name: facturacion-sunat
-  datasource:
-    url: jdbc:h2:mem:facturacion;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+  profiles:
+    active: postgres
 
 server:
   port: 8080
