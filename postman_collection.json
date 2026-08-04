@@ -181,7 +181,7 @@
 			"name": "Comprobantes (Emisión)",
 			"item": [
 				{
-					"name": "Emitir Boleta / Factura Contado (Con desc. stock)",
+					"name": "Emitir Factura Contado (Con desc. stock)",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -195,7 +195,7 @@
 							"raw": "{\n    \"tipoDocumento\": \"01\",\n    \"serie\": \"F001\",\n    \"clienteTipoDocumento\": \"6\",\n    \"clienteNumeroDocumento\": \"20601234567\",\n    \"clienteNombre\": \"INVERSIONES PEPE S.A.C.\",\n    \"formaPago\": \"CONTADO\",\n    \"items\": [\n        {\n            \"descripcion\": \"Laptop ASUS VivoBook\",\n            \"cantidad\": 1.0,\n            \"precioUnitario\": 2500.00,\n            \"codigoInterno\": \"P001\",\n            \"tipoUnidad\": \"NIU\",\n            \"tipoAfectacionIgv\": \"10\"\n        }\n    ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/comprobantes",
+							"raw": "http://localhost:8080/api/comprobantes/factura",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -203,7 +203,38 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"comprobantes"
+								"comprobantes",
+								"factura"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Emitir Boleta Contado (Con desc. stock)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tipoDocumento\": \"03\",\n    \"serie\": \"B001\",\n    \"clienteTipoDocumento\": \"1\",\n    \"clienteNumeroDocumento\": \"72182050\",\n    \"clienteNombre\": \"LENIN ANTONY LAURA GARCIA\",\n    \"formaPago\": \"CONTADO\",\n    \"items\": [\n        {\n            \"descripcion\": \"Laptop ASUS VivoBook\",\n            \"cantidad\": 1.0,\n            \"precioUnitario\": 2500.00,\n            \"codigoInterno\": \"P001\",\n            \"tipoUnidad\": \"NIU\",\n            \"tipoAfectacionIgv\": \"10\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/comprobantes/boleta",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"comprobantes",
+								"boleta"
 							]
 						}
 					},
@@ -224,7 +255,7 @@
 							"raw": "{\n    \"tipoDocumento\": \"01\",\n    \"serie\": \"F001\",\n    \"clienteTipoDocumento\": \"6\",\n    \"clienteNumeroDocumento\": \"20601234567\",\n    \"clienteNombre\": \"INVERSIONES PEPE S.A.C.\",\n    \"formaPago\": \"CREDITO\",\n    \"saldoPendiente\": 2950.00,\n    \"cuotas\": [\n        {\n            \"numeroCuota\": 1,\n            \"monto\": 1475.00,\n            \"fechaVencimiento\": \"2026-08-20\"\n        },\n        {\n            \"numeroCuota\": 2,\n            \"monto\": 1475.00,\n            \"fechaVencimiento\": \"2026-09-20\"\n        }\n    ],\n    \"items\": [\n        {\n            \"descripcion\": \"Laptop ASUS VivoBook\",\n            \"cantidad\": 1.0,\n            \"precioUnitario\": 2500.00,\n            \"codigoInterno\": \"P001\",\n            \"tipoUnidad\": \"NIU\",\n            \"tipoAfectacionIgv\": \"10\"\n        }\n    ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/comprobantes",
+							"raw": "http://localhost:8080/api/comprobantes/factura",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -232,7 +263,8 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"comprobantes"
+								"comprobantes",
+								"factura"
 							]
 						}
 					},
@@ -253,7 +285,7 @@
 							"raw": "{\n    \"tipoDocumento\": \"07\",\n    \"serie\": \"FN01\",\n    \"clienteTipoDocumento\": \"6\",\n    \"clienteNumeroDocumento\": \"20601234567\",\n    \"clienteNombre\": \"INVERSIONES PEPE S.A.C.\",\n    \"documentoModificadoId\": \"F001-1\",\n    \"documentoModificadoTipo\": \"01\",\n    \"notaMotivoCodigo\": \"01\",\n    \"notaMotivoDescripcion\": \"ANULACION DE LA OPERACION\",\n    \"items\": [\n        {\n            \"descripcion\": \"Laptop ASUS VivoBook\",\n            \"cantidad\": 1.0,\n            \"precioUnitario\": 2500.00,\n            \"codigoInterno\": \"P001\",\n            \"tipoUnidad\": \"NIU\",\n            \"tipoAfectacionIgv\": \"10\"\n        }\n    ]\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/comprobantes",
+							"raw": "http://localhost:8080/api/comprobantes/nota-credito",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -261,7 +293,8 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"comprobantes"
+								"comprobantes",
+								"nota-credito"
 							]
 						}
 					},
@@ -351,6 +384,248 @@
 							"path": [
 								"api",
 								"guias"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Autenticacion",
+			"item": [
+				{
+					"name": "Registrar Usuario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"email\": \"admin@tuempresa.com\",\n    \"password\": \"admin123\",\n    \"rol\": \"ROLE_ADMIN\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/registro",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"auth",
+								"registro"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Iniciar Sesion (Login)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Compras",
+			"item": [
+				{
+					"name": "Registrar Compra",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tipoDocumento\": \"01\",\n    \"serie\": \"F001\",\n    \"numero\": 12345,\n    \"fechaEmision\": \"2026-08-03\",\n    \"proveedorId\": 1,\n    \"items\": [\n        {\n            \"productoId\": 1,\n            \"cantidad\": 5.0,\n            \"precioUnitario\": 1800.00\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/compras",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"compras"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Compras",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/compras",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"compras"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Caja y Cobros",
+			"item": [
+				{
+					"name": "Registrar Pago / Cobro",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"comprobanteId\": 1,\n    \"monto\": 500.00,\n    \"metodoPago\": \"YAPE\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/cobros-pagos",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"cobros-pagos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Cobros por Comprobante",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/cobros-pagos/comprobante/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"cobros-pagos",
+								"comprobante",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Libros Electronicos (PLE)",
+			"item": [
+				{
+					"name": "Descargar PLE Ventas 14.1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/ple/ventas?mes=8&anio=2026",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"ple",
+								"ventas"
+							],
+							"query": [
+								{
+									"key": "mes",
+									"value": "8"
+								},
+								{
+									"key": "anio",
+									"value": "2026"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Descargar PLE Compras 8.1",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/ple/compras?mes=8&anio=2026",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"ple",
+								"compras"
+							],
+							"query": [
+								{
+									"key": "mes",
+									"value": "8"
+								},
+								{
+									"key": "anio",
+									"value": "2026"
+								}
 							]
 						}
 					},

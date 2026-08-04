@@ -3,6 +3,17 @@ spring:
     name: facturacion-sunat
   profiles:
     active: postgres
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_USERNAME:leninlauragarcia@gmail.com}
+    password: ${SMTP_PASSWORD:ykqlfgalnfvvrwat}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: 8080
@@ -30,3 +41,9 @@ sunat:
   endpoint-produccion: https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billService
   certificado-path: ${SUNAT_CERTIFICADO_PATH:src/main/resources/certificados/certificado_prueba.p12}
   certificado-password: ${SUNAT_CERTIFICADO_PASSWORD:changeit}
+
+# Token de ApisPeru para consulta de RUC/DNI
+consulta:
+  url-dni: "https://dniruc.apisperu.com/api/v1/dni/"
+  url-ruc: "https://dniruc.apisperu.com/api/v1/ruc/"
+  token: ${CONSULTA_TOKEN:eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImxlbmlubGF1cmFnYXJjaWExNzA0QGdtYWlsLmNvbSJ9.dcdqWwh9PQHBBbWnPGE8z9M1NBV1BYxuK4xcCAsiYzw}

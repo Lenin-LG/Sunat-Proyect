@@ -6,12 +6,20 @@ import com.tuempresa.facturacion.domain.ports.in.AdministrarClienteUseCase;
 import com.tuempresa.facturacion.domain.ports.in.AnularComprobanteUseCase;
 import com.tuempresa.facturacion.domain.ports.in.EmitirGuiaRemisionUseCase;
 import com.tuempresa.facturacion.domain.ports.in.AdministrarEmpresaUseCase;
+import com.tuempresa.facturacion.domain.ports.in.AdministrarUsuarioUseCase;
+import com.tuempresa.facturacion.domain.ports.in.RegistrarCompraUseCase;
+import com.tuempresa.facturacion.domain.ports.in.RegistrarCobroPagoUseCase;
+import com.tuempresa.facturacion.domain.ports.in.GenerarPleUseCase;
 import com.tuempresa.facturacion.application.service.ComprobanteService;
+import com.tuempresa.facturacion.application.service.CompraService;
+import com.tuempresa.facturacion.application.service.CobroPagoService;
+import com.tuempresa.facturacion.application.service.PleService;
 import com.tuempresa.facturacion.application.service.ProductoService;
 import com.tuempresa.facturacion.application.service.ClienteService;
 import com.tuempresa.facturacion.application.service.AnulacionService;
 import com.tuempresa.facturacion.application.service.GuiaRemisionService;
 import com.tuempresa.facturacion.application.service.EmpresaService;
+import com.tuempresa.facturacion.application.service.UsuarioService;
 import com.tuempresa.facturacion.domain.ports.out.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +39,9 @@ public class ApplicationConfig {
             SunatSoapPort sunatSoapPort,
             ProductoPersistencePort productoPersistencePort,
             KardexPersistencePort kardexPersistencePort,
+            EntidadPersistencePort entidadPersistencePort,
+            ReportePdfPort reportePdfPort,
+            NotificacionEmailPort notificacionEmailPort,
             SunatProperties sunatProperties,
             PrivateKey privateKey,
             X509Certificate certificado) {
@@ -42,6 +53,9 @@ public class ApplicationConfig {
                 sunatSoapPort,
                 productoPersistencePort,
                 kardexPersistencePort,
+                entidadPersistencePort,
+                reportePdfPort,
+                notificacionEmailPort,
                 sunatProperties.getRuc().toString(),
                 privateKey,
                 certificado);
@@ -115,5 +129,35 @@ public class ApplicationConfig {
     public AdministrarEmpresaUseCase administrarEmpresaUseCase(
             EmpresaPersistencePort empresaPersistencePort) {
         return new EmpresaService(empresaPersistencePort);
+    }
+
+    @Bean
+    public AdministrarUsuarioUseCase administrarUsuarioUseCase(
+            UsuarioPersistencePort usuarioPersistencePort,
+            PasswordEncoderPort passwordEncoderPort) {
+        return new UsuarioService(usuarioPersistencePort, passwordEncoderPort);
+    }
+
+    @Bean
+    public RegistrarCompraUseCase registrarCompraUseCase(
+            CompraPersistencePort compraPersistencePort,
+            AdministrarProductoUseCase productoUseCase) {
+        return new CompraService(compraPersistencePort, productoUseCase);
+    }
+
+    @Bean
+    public RegistrarCobroPagoUseCase registrarCobroPagoUseCase(
+            CobroPagoPersistencePort cobroPagoPersistencePort,
+            ComprobantePersistencePort comprobantePersistencePort) {
+        return new CobroPagoService(cobroPagoPersistencePort, comprobantePersistencePort);
+    }
+
+    @Bean
+    public GenerarPleUseCase generarPleUseCase(
+            ComprobantePersistencePort comprobantePersistencePort,
+            CompraPersistencePort compraPersistencePort,
+            EntidadPersistencePort entidadPersistencePort,
+            SunatProperties sunatProperties) {
+        return new PleService(comprobantePersistencePort, compraPersistencePort, entidadPersistencePort, sunatProperties.getRuc().toString());
     }
 }
