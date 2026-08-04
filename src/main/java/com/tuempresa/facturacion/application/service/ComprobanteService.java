@@ -28,6 +28,9 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
     private final SunatSoapPort sunatSoapPort;
     private final ProductoPersistencePort productoPersistencePort;
     private final KardexPersistencePort kardexPersistencePort;
+    private final EntidadPersistencePort entidadPersistencePort;
+    private final ReportePdfPort reportePdfPort;
+    private final NotificacionEmailPort notificacionEmailPort;
     private final String rucEmisor;
     private final PrivateKey privateKey;
     private final X509Certificate certificado;
@@ -39,6 +42,9 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
                               SunatSoapPort sunatSoapPort,
                               ProductoPersistencePort productoPersistencePort,
                               KardexPersistencePort kardexPersistencePort,
+                              EntidadPersistencePort entidadPersistencePort,
+                              ReportePdfPort reportePdfPort,
+                              NotificacionEmailPort notificacionEmailPort,
                               String rucEmisor,
                               PrivateKey privateKey,
                               X509Certificate certificado) {
@@ -49,6 +55,9 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
         this.sunatSoapPort = sunatSoapPort;
         this.productoPersistencePort = productoPersistencePort;
         this.kardexPersistencePort = kardexPersistencePort;
+        this.entidadPersistencePort = entidadPersistencePort;
+        this.reportePdfPort = reportePdfPort;
+        this.notificacionEmailPort = notificacionEmailPort;
         this.rucEmisor = rucEmisor;
         this.privateKey = privateKey;
         this.certificado = certificado;
@@ -100,7 +109,29 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
         RespuestaSunat respuesta = sunatSoapPort.enviarComprobante(nombreArchivo, xmlFirmado);
 
         actualizarEstado(comprobante, respuesta);
-        return comprobantePersistencePort.save(comprobante);
+        Comprobante savedComprobante = comprobantePersistencePort.save(comprobante);
+
+        try {
+            entidadPersistencePort.findByNumeroDocumento(savedComprobante.getClienteNumeroDocumento())
+                .ifPresent(cliente -> {
+                    if (cliente.getCorreo() != null && !cliente.getCorreo().isBlank()) {
+                        byte[] pdfBytes = reportePdfPort.generarFacturaPdf(savedComprobante, empresa);
+                        byte[] xmlBytes = documentToBytes(xmlFirmado);
+                        String nombrePdf = nombreArchivo + ".pdf";
+                        String nombreXml = nombreArchivo + ".xml";
+                        String asunto = "Comprobante Electronico " + savedComprobante.getSerie() + "-" + savedComprobante.getNumero();
+                        String cuerpo = "<h3>Estimado cliente " + savedComprobante.getClienteNombre() + ",</h3>" +
+                                        "<p>Adjuntamos su comprobante de pago electronico en formatos PDF y XML.</p>" +
+                                        "<p>Atentamente,<br/>" + empresa.getRazonSocial() + "</p>";
+                        notificacionEmailPort.enviarComprobante(cliente.getCorreo(), asunto, cuerpo, pdfBytes, nombrePdf, xmlBytes, nombreXml);
+                    }
+                });
+        } catch (Exception e) {
+            System.err.println("No se pudo enviar el correo de notificacion: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return savedComprobante;
     }
 
     private Comprobante construirEntidad(ComprobanteCommand command, Empresa empresa) {
@@ -182,5 +213,17 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
     private String truncate(String str, int length) {
         if (str == null) return null;
         return str.length() > length ? str.substring(0, length) : str;
+    }
+
+    private byte[] documentToBytes(Document doc) {
+        try {
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            javax.xml.transform.TransformerFactory.newInstance().newTransformer()
+                .transform(new javax.xml.transform.dom.DOMSource(doc),
+                        new javax.xml.transform.stream.StreamResult(baos));
+            return baos.toByteArray();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

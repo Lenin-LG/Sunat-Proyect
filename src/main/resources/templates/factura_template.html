@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Comprobante de Pago Electrónico</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm 20mm 15mm;
+        }
+        body {
+            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            color: #333333;
+            line-height: 1.4;
+            font-size: 11pt;
+            margin: 0;
+            padding: 0;
+        }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .logo-section {
+            width: 60%;
+            vertical-align: top;
+        }
+        .company-name {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 5px;
+        }
+        .company-details {
+            font-size: 9.5pt;
+            color: #555555;
+        }
+        .ruc-box {
+            width: 40%;
+            border: 2.5px solid #1a365d;
+            text-align: center;
+            padding: 18px;
+            border-radius: 8px;
+            background-color: #f7fafc;
+        }
+        .ruc-title {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #1a365d;
+            margin-bottom: 8px;
+        }
+        .ruc-number {
+            font-size: 14pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .ruc-cpe {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #2b6cb0;
+            text-transform: uppercase;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            background-color: #f7fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .info-table td {
+            padding: 10px 12px;
+            vertical-align: top;
+            font-size: 9.5pt;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #4a5568;
+            width: 15%;
+        }
+        .info-value {
+            color: #2d3748;
+            width: 35%;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .items-table th {
+            background-color: #1a365d;
+            color: #ffffff;
+            font-weight: bold;
+            text-align: left;
+            padding: 10px;
+            font-size: 9.5pt;
+            border: 1px solid #1a365d;
+        }
+        .items-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 9.5pt;
+        }
+        .items-table tr:nth-child(even) td {
+            background-color: #fcfcfc;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .totals-section {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .qr-cell {
+            width: 40%;
+            vertical-align: top;
+            text-align: left;
+        }
+        .qr-image {
+            width: 130px;
+            height: 130px;
+            border: 1px solid #e2e8f0;
+            padding: 5px;
+            background-color: #ffffff;
+        }
+        .totals-cell {
+            width: 60%;
+            vertical-align: top;
+        }
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+            float: right;
+        }
+        .totals-table td {
+            padding: 6px 10px;
+            font-size: 10pt;
+        }
+        .totals-label {
+            font-weight: bold;
+            color: #4a5568;
+            text-align: right;
+            width: 65%;
+        }
+        .totals-value {
+            text-align: right;
+            color: #2d3748;
+            width: 35%;
+        }
+        .grand-total {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #1a365d;
+            background-color: #edf2f7;
+            border-top: 2px solid #1a365d;
+            border-bottom: 2px solid #1a365d;
+        }
+        .footer-note {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 8.5pt;
+            color: #718096;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cabecera -->
+    <table class="header-table">
+        <tr>
+            <td class="logo-section">
+                <div class="company-name" th:text="${empresa.razonSocial}">RAZON SOCIAL DE LA EMPRESA</div>
+                <div class="company-details">
+                    <span th:text="${empresa.direccionFiscal}">Dirección de la empresa</span>
+                </div>
+            </td>
+            <td class="ruc-box">
+                <div class="ruc-title">R.U.C. N° <span th:text="${empresa.ruc}">20123456789</span></div>
+                <div class="ruc-number" th:text="${c.serie + '-' + c.numero}">F001-00000001</div>
+                <div class="ruc-cpe" th:text="${c.tipoDocumento == '01' ? 'Factura Electrónica' : 'Boleta de Venta Electrónica'}">FACTURA ELECTRÓNICA</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Información del Cliente y Comprobante -->
+    <table class="info-table">
+        <tr>
+            <td class="info-label">Adquiriente:</td>
+            <td class="info-value" th:text="${c.clienteNombre}">CLIENTE S.A.C.</td>
+            <td class="info-label">Fecha Emisión:</td>
+            <td class="info-value" th:text="${#temporals.format(c.fechaEmision, 'dd/MM/yyyy')}">01/01/2026</td>
+        </tr>
+        <tr>
+            <td class="info-label">N° Documento:</td>
+            <td class="info-value" th:text="${c.clienteNumeroDocumento}">20987654321</td>
+            <td class="info-label">Moneda:</td>
+            <td class="info-value">SOLES (PEN)</td>
+        </tr>
+        <tr>
+            <td class="info-label">Forma de Pago:</td>
+            <td class="info-value" th:text="${c.formaPago}">CONTADO</td>
+            <td class="info-label"></td>
+            <td class="info-value"></td>
+        </tr>
+    </table>
+
+    <!-- Detalle de Ítems -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 10%">Código</th>
+                <th style="width: 50%">Descripción</th>
+                <th style="width: 10%" class="text-right">Cant.</th>
+                <th style="width: 15%" class="text-right">P. Unitario</th>
+                <th style="width: 15%" class="text-right">Importe</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="item : ${c.detalles}">
+                <td th:text="${item.codigoInterno}">P001</td>
+                <td th:text="${item.descripcion}">Descripción del producto</td>
+                <td class="text-right" th:text="${item.cantidad}">1.00</td>
+                <td class="text-right" th:text="${#numbers.formatDecimal(item.precioUnitario, 1, 2)}">10.00</td>
+                <td class="text-right" th:text="${#numbers.formatDecimal(item.valorVenta, 1, 2)}">10.00</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Totales y QR -->
+    <table class="totals-section">
+        <tr>
+            <td class="qr-cell">
+                <img class="qr-image" th:src="${qrCode}" alt="Código QR"/>
+            </td>
+            <td class="totals-cell">
+                <table class="totals-table">
+                    <tr>
+                        <td class="totals-label">Op. Gravada:</td>
+                        <td class="totals-value" th:text="${#numbers.formatDecimal(c.totalGravada, 1, 2)}">0.00</td>
+                    </tr>
+                    <tr>
+                        <td class="totals-label">I.G.V. (18%):</td>
+                        <td class="totals-value" th:text="${#numbers.formatDecimal(c.totalIgv, 1, 2)}">0.00</td>
+                    </tr>
+                    <tr th:if="${c.totalImpuestoBolsa != null and c.totalImpuestoBolsa > 0}">
+                        <td class="totals-label">I.C.B.P.E.R.:</td>
+                        <td class="totals-value" th:text="${#numbers.formatDecimal(c.totalImpuestoBolsa, 1, 2)}">0.00</td>
+                    </tr>
+                    <tr th:if="${c.anticipoReferencia != null}">
+                        <td class="totals-label">Anticipos:</td>
+                        <!-- We extract the amount from the reference if it has one -->
+                        <td class="totals-value" th:text="${c.anticipoReferencia.contains(':') ? c.anticipoReferencia.split(':')[1] : '0.00'}">0.00</td>
+                    </tr>
+                    <tr class="grand-total">
+                        <td class="totals-label" style="font-weight: bold; color: #1a365d;">Total a Pagar:</td>
+                        <td class="totals-value" style="font-weight: bold; color: #1a365d;" th:text="${#numbers.formatDecimal(c.totalPagar, 1, 2)}">0.00</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Pie de Página -->
+    <div class="footer-note">
+        Representación impresa de la <span th:text="${c.tipoDocumento == '01' ? 'Factura Electrónica' : 'Boleta de Venta Electrónica'}">Factura Electrónica</span>.<br/>
+        Consulte la validez de este comprobante en el portal de la SUNAT.<br/>
+        Autorizado mediante resolución de SUNAT. ¡Gracias por su compra!
+    </div>
+
+</body>
+</html>
