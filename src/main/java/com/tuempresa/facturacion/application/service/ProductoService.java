@@ -24,6 +24,9 @@ public class ProductoService implements AdministrarProductoUseCase {
         if (producto.getStockActual() == null) {
             producto.setStockActual(BigDecimal.ZERO);
         }
+        if (producto.getPrecioCostoPromedio() == null) {
+            producto.setPrecioCostoPromedio(BigDecimal.ZERO);
+        }
         return productoPersistencePort.save(producto);
     }
 
@@ -35,6 +38,7 @@ public class ProductoService implements AdministrarProductoUseCase {
         existing.setPrecioUnitario(producto.getPrecioUnitario());
         existing.setTipoAfectacionIgvId(producto.getTipoAfectacionIgvId());
         existing.setUnidadMedidaId(producto.getUnidadMedidaId());
+        existing.setCategoriaId(producto.getCategoriaId());
         return productoPersistencePort.save(existing);
     }
 
@@ -57,8 +61,22 @@ public class ProductoService implements AdministrarProductoUseCase {
     @Override
     public Producto registrarIngresoStock(Long id, BigDecimal cantidad, BigDecimal precioCosto) {
         Producto producto = obtener(id);
-        BigDecimal nuevoStock = producto.getStockActual().add(cantidad);
+        
+        BigDecimal oldStock = producto.getStockActual() != null ? producto.getStockActual() : BigDecimal.ZERO;
+        BigDecimal oldCost = producto.getPrecioCostoPromedio() != null ? producto.getPrecioCostoPromedio() : BigDecimal.ZERO;
+        
+        BigDecimal totalOldVal = oldStock.multiply(oldCost);
+        BigDecimal totalNewVal = cantidad.multiply(precioCosto);
+        BigDecimal totalVal = totalOldVal.add(totalNewVal);
+        
+        BigDecimal nuevoStock = oldStock.add(cantidad);
+        BigDecimal nuevoCostoPromedio = BigDecimal.ZERO;
+        if (nuevoStock.compareTo(BigDecimal.ZERO) > 0) {
+            nuevoCostoPromedio = totalVal.divide(nuevoStock, 4, java.math.RoundingMode.HALF_UP);
+        }
+        
         producto.setStockActual(nuevoStock);
+        producto.setPrecioCostoPromedio(nuevoCostoPromedio);
 
         kardexPersistencePort.save(Kardex.builder()
                 .productoId(id)

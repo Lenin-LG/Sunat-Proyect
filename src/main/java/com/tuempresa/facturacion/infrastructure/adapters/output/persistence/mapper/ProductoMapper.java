@@ -15,6 +15,8 @@ public class ProductoMapper {
                 .tipoAfectacionIgvId(entity.getTipoAfectacionIgvId())
                 .unidadMedidaId(entity.getUnidadMedidaId())
                 .stockActual(entity.getStockActual())
+                .precioCostoPromedio(entity.getPrecioCostoPromedio())
+                .categoriaId(entity.getCategoriaId())
                 .build();
     }
 
@@ -28,6 +30,8 @@ public class ProductoMapper {
         entity.setTipoAfectacionIgvId(domain.getTipoAfectacionIgvId());
         entity.setUnidadMedidaId(domain.getUnidadMedidaId());
         entity.setStockActual(domain.getStockActual());
+        entity.setPrecioCostoPromedio(domain.getPrecioCostoPromedio());
+        entity.setCategoriaId(domain.getCategoriaId());
         return entity;
     }
 }

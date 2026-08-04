@@ -18,4 +18,6 @@ public class Producto {
     private String tipoAfectacionIgvId;
     private String unidadMedidaId;
     private BigDecimal stockActual;
+    private BigDecimal precioCostoPromedio;
+    private Long categoriaId;
 }
