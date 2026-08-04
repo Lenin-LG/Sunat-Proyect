@@ -30,4 +30,10 @@ public class ProductoEntity {
 
     @Column(name = "stock_actual", nullable = false)
     private BigDecimal stockActual;
+
+    @Column(name = "precio_costo_promedio", nullable = false)
+    private BigDecimal precioCostoPromedio;
+
+    @Column(name = "categoria_id")
+    private Long categoriaId;
 }
