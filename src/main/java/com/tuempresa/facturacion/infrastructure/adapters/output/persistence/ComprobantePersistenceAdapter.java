@@ -35,4 +35,11 @@ public class ComprobantePersistenceAdapter implements ComprobantePersistencePort
         return repository.findTopByTipoDocumentoAndSerieOrderByNumeroDesc(tipoDocumento, serie)
                 .map(ComprobanteMapper::toDomain);
     }
+
+    @Override
+    public java.util.List<Comprobante> findByFechaEmisionBetween(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        return repository.findByFechaEmisionBetween(startDate, endDate).stream()
+                .map(ComprobanteMapper::toDomain)
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

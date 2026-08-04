@@ -88,6 +88,14 @@ public class GuiaRemisionService implements EmitirGuiaRemisionUseCase {
         }
 
         Document xml = xmlBuilderPort.construir(de, empresa, cliente, chofer, vehiculo, detalles);
+        try {
+            javax.xml.transform.Transformer transformer = javax.xml.transform.TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(javax.xml.transform.OutputKeys.INDENT, "yes");
+            javax.xml.transform.stream.StreamResult result = new javax.xml.transform.stream.StreamResult(new java.io.File("/home/lenin/Documents/Personal/facturacion-sunat/debug_guia.xml"));
+            transformer.transform(new javax.xml.transform.dom.DOMSource(xml), result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         com.tuempresa.facturacion.infrastructure.config.DynamicCertLoader.CertKeys keys = 
                 com.tuempresa.facturacion.infrastructure.config.DynamicCertLoader.load(empresa, privateKey, certificado);
         Document xmlFirmado = firmaDigitalPort.firmar(xml, keys.privateKey, keys.certificate);

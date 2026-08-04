@@ -54,7 +54,7 @@ public class ConsultaDocumentoHttpAdapter implements ConsultaDocumentoPort {
                         .build());
             }
         } catch (Exception e) {
-            // fallback
+            e.printStackTrace();
         }
         return Optional.empty();
     }
@@ -90,7 +90,7 @@ public class ConsultaDocumentoHttpAdapter implements ConsultaDocumentoPort {
                         .build());
             }
         } catch (Exception e) {
-            // fallback
+            e.printStackTrace();
         }
         return Optional.empty();
     }

@@ -84,6 +84,8 @@ public class SunatGuiaSoapAdapter implements SunatGuiaSoapPort {
             String endpoint = config.endpoint;
             if (endpoint.contains("e-factura.sunat.gob.pe")) {
                 endpoint = "https://e-guiaremision.sunat.gob.pe/ol-ti-itemision-guia-gem/billService";
+            } else if (endpoint.contains("ol-ti-itcpfegem-beta")) {
+                endpoint = "https://e-beta.sunat.gob.pe/ol-ti-itemision-guia-gem-beta/billService";
             } else if (endpoint.contains("ol-ti-itcpe")) {
                 endpoint = endpoint.replace("ol-ti-itcpe", "ol-ti-itemision-otroscpe-gem-beta");
             }

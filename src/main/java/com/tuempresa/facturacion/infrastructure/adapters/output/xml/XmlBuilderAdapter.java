@@ -4,6 +4,7 @@ import com.tuempresa.facturacion.domain.model.Comprobante;
 import com.tuempresa.facturacion.domain.model.ComprobanteDetalle;
 import com.tuempresa.facturacion.domain.model.Cuota;
 import com.tuempresa.facturacion.domain.model.Empresa;
+import com.tuempresa.facturacion.domain.ports.out.CatalogoSunatPersistencePort;
 import com.tuempresa.facturacion.domain.ports.out.XmlBuilderPort;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -15,6 +16,24 @@ import java.math.RoundingMode;
 
 @Service
 public class XmlBuilderAdapter implements XmlBuilderPort {
+
+    private final CatalogoSunatPersistencePort catalogoPort;
+
+    public XmlBuilderAdapter(CatalogoSunatPersistencePort catalogoPort) {
+        this.catalogoPort = catalogoPort;
+    }
+
+    private String getTaxName(String code, String defaultVal) {
+        return catalogoPort.findByCatalogoCodigoAndElementoCodigo("05", code)
+                .map(c -> c.getDescripcion().split(" ")[0])
+                .orElse(defaultVal);
+    }
+
+    private String getTaxTypeCode(String code, String defaultVal) {
+        return catalogoPort.findByCatalogoCodigoAndElementoCodigo("05", code)
+                .map(c -> c.getAbreviatura())
+                .orElse(defaultVal);
+    }
 
     private static final String NS_INVOICE = "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2";
     private static final String NS_CREDIT_NOTE = "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2";
@@ -29,6 +48,26 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
     @Override
     public Document construir(Comprobante c, Empresa empresa) {
         try {
+            BigDecimal prepaidAmount = BigDecimal.ZERO;
+            String anticipoDocId = null;
+            String anticipoDocType = "02"; // 02 = Factura, 03 = Boleta
+
+            if (c.getAnticipoReferencia() != null && !c.getAnticipoReferencia().isBlank()) {
+                String ref = c.getAnticipoReferencia();
+                if (ref.contains(":")) {
+                    String[] parts = ref.split(":");
+                    anticipoDocId = parts[0];
+                    try {
+                        prepaidAmount = new BigDecimal(parts[1]);
+                    } catch (Exception e) {}
+                } else {
+                    anticipoDocId = ref;
+                }
+                if (anticipoDocId.startsWith("B")) {
+                    anticipoDocType = "03";
+                }
+            }
+
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             Document doc = factory.newDocumentBuilder().newDocument();
@@ -93,6 +132,29 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
                 root.appendChild(billingRef);
             }
 
+            if (anticipoDocId != null) {
+                Element docRef = cac(doc, "AdditionalDocumentReference");
+                docRef.appendChild(cbc(doc, "ID", anticipoDocId));
+
+                Element docTypeCode = cbc(doc, "DocumentTypeCode", anticipoDocType);
+                docTypeCode.setAttribute("listName", "Documento Relacionado");
+                docTypeCode.setAttribute("listAgencyName", "PE:SUNAT");
+                docTypeCode.setAttribute("listURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo12");
+                docRef.appendChild(docTypeCode);
+
+                docRef.appendChild(cbc(doc, "DocumentStatusCode", "1"));
+
+                Element issuer = cac(doc, "IssuerParty");
+                Element partyId = cac(doc, "PartyIdentification");
+                Element rucEl = cbc(doc, "ID", empresa.getRuc());
+                rucEl.setAttribute("schemeID", "6");
+                partyId.appendChild(rucEl);
+                issuer.appendChild(partyId);
+                docRef.appendChild(issuer);
+
+                root.appendChild(docRef);
+            }
+
             root.appendChild(buildFirmaNegocio(doc, empresa));
             root.appendChild(buildSupplierParty(doc, empresa));
             root.appendChild(buildCustomerParty(doc, c));
@@ -133,8 +195,20 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
                 }
             }
 
+            if (anticipoDocId != null && prepaidAmount.compareTo(BigDecimal.ZERO) > 0) {
+                Element prepaidPayment = cac(doc, "PrepaidPayment");
+
+                Element prepId = cbc(doc, "ID", anticipoDocId);
+                prepId.setAttribute("schemeName", "SUNAT:Identificador de Documento de Anticipo");
+                prepaidPayment.appendChild(prepId);
+
+                prepaidPayment.appendChild(cbcMoney(doc, "PaidAmount", prepaidAmount));
+                prepaidPayment.appendChild(cbc(doc, "ReceivedDate", c.getFechaEmision().toString()));
+                root.appendChild(prepaidPayment);
+            }
+
             root.appendChild(buildTaxTotal(doc, c));
-            root.appendChild(buildLegalMonetaryTotal(doc, c));
+            root.appendChild(buildLegalMonetaryTotal(doc, c, prepaidAmount));
 
             int lineId = 1;
             for (ComprobanteDetalle item : c.getDetalles()) {
@@ -271,8 +345,8 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         schemeId.setAttribute("schemeAgencyName", "PE:SUNAT");
         schemeId.setAttribute("schemeURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05");
         scheme.appendChild(schemeId);
-        scheme.appendChild(cbc(doc, "Name", "IGV"));
-        scheme.appendChild(cbc(doc, "TaxTypeCode", "VAT"));
+        scheme.appendChild(cbc(doc, "Name", getTaxName("1000", "IGV")));
+        scheme.appendChild(cbc(doc, "TaxTypeCode", getTaxTypeCode("1000", "VAT")));
         category.appendChild(scheme);
         subtotal.appendChild(category);
         taxTotal.appendChild(subtotal);
@@ -288,8 +362,8 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
             schBolsaId.setAttribute("schemeAgencyName", "PE:SUNAT");
             schBolsaId.setAttribute("schemeURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05");
             schBolsa.appendChild(schBolsaId);
-            schBolsa.appendChild(cbc(doc, "Name", "ICBPER"));
-            schBolsa.appendChild(cbc(doc, "TaxTypeCode", "OTH"));
+            schBolsa.appendChild(cbc(doc, "Name", getTaxName("7152", "ICBPER")));
+            schBolsa.appendChild(cbc(doc, "TaxTypeCode", getTaxTypeCode("7152", "OTH")));
             catBolsa.appendChild(schBolsa);
             subtotalBolsa.appendChild(catBolsa);
             taxTotal.appendChild(subtotalBolsa);
@@ -298,7 +372,7 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         return taxTotal;
     }
 
-    private Element buildLegalMonetaryTotal(Document doc, Comprobante c) {
+    private Element buildLegalMonetaryTotal(Document doc, Comprobante c, BigDecimal prepaidAmount) {
         String monetaryTagName = "LegalMonetaryTotal";
         if ("08".equals(c.getTipoDocumento())) {
             monetaryTagName = "RequestedMonetaryTotal";
@@ -308,8 +382,8 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         total.appendChild(cbcMoney(doc, "TaxInclusiveAmount", c.getTotalPagar()));
         total.appendChild(cbcMoney(doc, "AllowanceTotalAmount", c.getDescuentoGlobal()));
         total.appendChild(cbcMoney(doc, "ChargeTotalAmount", BigDecimal.ZERO));
-        total.appendChild(cbcMoney(doc, "PrepaidAmount", BigDecimal.ZERO));
-        total.appendChild(cbcMoney(doc, "PayableAmount", c.getTotalPagar()));
+        total.appendChild(cbcMoney(doc, "PrepaidAmount", prepaidAmount));
+        total.appendChild(cbcMoney(doc, "PayableAmount", c.getTotalPagar().subtract(prepaidAmount)));
         return total;
     }
 
@@ -374,8 +448,8 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
 
         Element scheme = cac(doc, "TaxScheme");
         scheme.appendChild(cbc(doc, "ID", "1000"));
-        scheme.appendChild(cbc(doc, "Name", "IGV"));
-        scheme.appendChild(cbc(doc, "TaxTypeCode", "VAT"));
+        scheme.appendChild(cbc(doc, "Name", getTaxName("1000", "IGV")));
+        scheme.appendChild(cbc(doc, "TaxTypeCode", getTaxTypeCode("1000", "VAT")));
         category.appendChild(scheme);
         subtotal.appendChild(category);
         taxTotal.appendChild(subtotal);
@@ -397,8 +471,8 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
             schBolsaId.setAttribute("schemeAgencyName", "PE:SUNAT");
             schBolsaId.setAttribute("schemeURI", "urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo05");
             schBolsa.appendChild(schBolsaId);
-            schBolsa.appendChild(cbc(doc, "Name", "ICBPER"));
-            schBolsa.appendChild(cbc(doc, "TaxTypeCode", "OTH"));
+            schBolsa.appendChild(cbc(doc, "Name", getTaxName("7152", "ICBPER")));
+            schBolsa.appendChild(cbc(doc, "TaxTypeCode", getTaxTypeCode("7152", "OTH")));
             catBolsa.appendChild(schBolsa);
             subtotalBolsa.appendChild(catBolsa);
             taxTotal.appendChild(subtotalBolsa);
