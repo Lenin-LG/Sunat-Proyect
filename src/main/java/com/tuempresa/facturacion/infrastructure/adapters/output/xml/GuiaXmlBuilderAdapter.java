@@ -53,8 +53,8 @@ public class GuiaXmlBuilderAdapter implements GuiaXmlBuilderPort {
 
             // Shipments
             Element shipment = cac(doc, "Shipment");
+            shipment.appendChild(cbc(doc, "ID", "1"));
             shipment.appendChild(cbc(doc, "HandlingCode", de.getMotivoTraslado()));
-            shipment.appendChild(cbc(doc, "Information", "TRASLADO POR MOTIVO " + de.getMotivoTraslado()));
 
             Element grossWeight = cbc(doc, "GrossWeightMeasure",
                     de.getPesoTotal().setScale(2, RoundingMode.HALF_UP).toPlainString());
@@ -83,7 +83,7 @@ public class GuiaXmlBuilderAdapter implements GuiaXmlBuilderPort {
             stage.appendChild(driverEl);
             shipment.appendChild(stage);
 
-            // Delivery Points
+            // Delivery Points (Punto de Llegada)
             Element delivery = cac(doc, "Delivery");
             Element delAddress = cac(doc, "DeliveryAddress");
             delAddress.appendChild(cbc(doc, "ID", "150101")); // Ubigeo test
@@ -92,17 +92,6 @@ public class GuiaXmlBuilderAdapter implements GuiaXmlBuilderPort {
                     cliente.getDireccion() != null ? cliente.getDireccion() : "DIRECCION LLEGADA MOCK"));
             delAddress.appendChild(delLine);
             delivery.appendChild(delAddress);
-
-            // Despatch Points (Departure)
-            Element despatch = cac(doc, "Despatch");
-            Element depAddress = cac(doc, "DespatchAddress");
-            depAddress.appendChild(cbc(doc, "ID", empresa.getUbigeo()));
-            Element depLine = cac(doc, "AddressLine");
-            depLine.appendChild(cbc(doc, "Line", empresa.getDireccionFiscal()));
-            depAddress.appendChild(depLine);
-            despatch.appendChild(depAddress);
-            delivery.appendChild(despatch);
-
             shipment.appendChild(delivery);
 
             // Vehicles / Transport Equipment
@@ -111,6 +100,14 @@ public class GuiaXmlBuilderAdapter implements GuiaXmlBuilderPort {
             trEquip.appendChild(cbc(doc, "ID", vehiculo.getPlaca()));
             trUnit.appendChild(trEquip);
             shipment.appendChild(trUnit);
+
+            // Origin Address (Punto de Partida)
+            Element originAddress = cac(doc, "OriginAddress");
+            originAddress.appendChild(cbc(doc, "ID", empresa.getUbigeo()));
+            Element depLine = cac(doc, "AddressLine");
+            depLine.appendChild(cbc(doc, "Line", empresa.getDireccionFiscal()));
+            originAddress.appendChild(depLine);
+            shipment.appendChild(originAddress);
 
             root.appendChild(shipment);
 
