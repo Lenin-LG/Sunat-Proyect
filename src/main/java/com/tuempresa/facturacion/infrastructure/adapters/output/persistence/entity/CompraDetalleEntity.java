@@ -21,4 +21,8 @@ public class CompraDetalleEntity {
 
     @Column(name = "precio_unitario", nullable = false)
     private BigDecimal precioUnitario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "compra_id", nullable = false)
+    private CompraEntity compra;
 }

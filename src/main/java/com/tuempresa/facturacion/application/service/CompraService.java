@@ -55,12 +55,16 @@ public class CompraService implements RegistrarCompraUseCase {
                 .creadoEn(LocalDateTime.now())
                 .build();
 
+        Compra compraGuardada = compraPersistencePort.save(compra);
+
         List<CompraDetalle> detalles = command.getItems().stream()
                 .map(item -> {
                     // Actualizar el stock y el costo promedio ponderado del producto
-                    productoUseCase.registrarIngresoStock(item.getProductoId(), item.getCantidad(), item.getPrecioUnitario());
+                    productoUseCase.registrarIngresoStock(item.getProductoId(), item.getCantidad(),
+                            item.getPrecioUnitario());
 
                     return CompraDetalle.builder()
+                            .compraId(compraGuardada.getId())
                             .productoId(item.getProductoId())
                             .cantidad(item.getCantidad())
                             .precioUnitario(item.getPrecioUnitario())
@@ -68,9 +72,9 @@ public class CompraService implements RegistrarCompraUseCase {
                 })
                 .collect(Collectors.toList());
 
-        compra.setDetalles(detalles);
+        compraGuardada.setDetalles(detalles);
 
-        return compraPersistencePort.save(compra);
+        return compraPersistencePort.save(compraGuardada);
     }
 
     @Override
