@@ -9,7 +9,8 @@ import java.util.stream.Collectors;
 public class CompraMapper {
 
     public static Compra toDomain(CompraEntity entity) {
-        if (entity == null) return null;
+        if (entity == null)
+            return null;
         return Compra.builder()
                 .id(entity.getId())
                 .tipoDocumento(entity.getTipoDocumento())
@@ -21,19 +22,21 @@ public class CompraMapper {
                 .totalIgv(entity.getTotalIgv())
                 .totalPagar(entity.getTotalPagar())
                 .creadoEn(entity.getCreadoEn())
-                .detalles(entity.getDetalles() == null ? null : entity.getDetalles().stream()
-                        .map(d -> CompraDetalle.builder()
-                                .id(d.getId())
-                                .productoId(d.getProductoId())
-                                .cantidad(d.getCantidad())
-                                .precioUnitario(d.getPrecioUnitario())
-                                .build())
-                        .collect(Collectors.toList()))
+                .detalles(entity.getDetalles() == null ? null
+                        : entity.getDetalles().stream()
+                                .map(d -> CompraDetalle.builder()
+                                        .id(d.getId())
+                                        .productoId(d.getProductoId())
+                                        .cantidad(d.getCantidad())
+                                        .precioUnitario(d.getPrecioUnitario())
+                                        .build())
+                                .collect(Collectors.toList()))
                 .build();
     }
 
     public static CompraEntity toEntity(Compra domain) {
-        if (domain == null) return null;
+        if (domain == null)
+            return null;
         CompraEntity entity = new CompraEntity();
         entity.setId(domain.getId());
         entity.setTipoDocumento(domain.getTipoDocumento());

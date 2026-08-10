@@ -18,7 +18,15 @@ public class ClienteService implements AdministrarClienteUseCase {
 
     @Override
     public Entidad registrar(Entidad entidad) {
-        return entidadPersistencePort.save(entidad);
+        return entidadPersistencePort.findByNumeroDocumento(entidad.getNumeroDocumento())
+                .map(existing -> {
+                    existing.setNombreRazonSocial(entidad.getNombreRazonSocial());
+                    existing.setDireccion(entidad.getDireccion());
+                    existing.setCorreo(entidad.getCorreo());
+                    existing.setTipoEntidadId(entidad.getTipoEntidadId());
+                    return entidadPersistencePort.save(existing);
+                })
+                .orElseGet(() -> entidadPersistencePort.save(entidad));
     }
 
     @Override
@@ -62,7 +70,7 @@ public class ClienteService implements AdministrarClienteUseCase {
                     } else {
                         throw new IllegalArgumentException("Tipo de documento no soportado para consulta automática: " + tipoDoc);
                     }
-                    return entidadPersistencePort.save(consultada);
+                    return consultada;
                 });
     }
 }

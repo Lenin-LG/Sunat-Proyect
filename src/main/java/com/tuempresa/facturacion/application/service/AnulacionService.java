@@ -49,6 +49,10 @@ public class AnulacionService implements AnularComprobanteUseCase {
             throw new IllegalStateException("Solo se pueden anular comprobantes aceptados por SUNAT");
         }
 
+        if ("03".equals(c.getTipoDocumento())) {
+            throw new IllegalArgumentException("Las boletas de venta no pueden ser anuladas mediante Comunicacion de Baja. Debe emitir una Nota de Credito para su anulacion.");
+        }
+
         Empresa empresa = empresaPersistencePort.findByRuc(rucEmisor);
 
         // ID de baja: RA-YYYYMMDD-Correlativo

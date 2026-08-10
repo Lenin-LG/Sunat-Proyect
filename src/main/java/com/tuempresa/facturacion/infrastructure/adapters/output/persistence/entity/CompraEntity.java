@@ -44,7 +44,6 @@ public class CompraEntity {
     @Column(name = "creado_en", nullable = false, updatable = false)
     private LocalDateTime creadoEn = LocalDateTime.now();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "compra_id")
+    @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CompraDetalleEntity> detalles = new ArrayList<>();
 }

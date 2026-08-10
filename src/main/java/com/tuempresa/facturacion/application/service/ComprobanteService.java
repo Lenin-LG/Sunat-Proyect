@@ -175,7 +175,11 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
             ComprobanteDetalle detalle = new ComprobanteDetalle();
             detalle.setDescripcion(itemReq.getDescripcion());
             detalle.setCantidad(itemReq.getCantidad());
-            detalle.setPrecioUnitario(itemReq.getPrecioUnitario());
+            
+            BigDecimal precioConIgv = itemReq.getPrecioUnitario();
+            BigDecimal precioSinIgv = precioConIgv.divide(new BigDecimal("1.18"), 6, RoundingMode.HALF_UP);
+            detalle.setPrecioUnitario(precioSinIgv);
+            
             detalle.setCodigoProductoSunat(itemReq.getCodigoProductoSunat());
             detalle.setCodigoInterno(itemReq.getCodigoInterno());
             detalle.setTipoUnidad(itemReq.getTipoUnidad() != null ? itemReq.getTipoUnidad() : "NIU");

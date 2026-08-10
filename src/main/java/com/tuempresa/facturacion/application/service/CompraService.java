@@ -10,6 +10,7 @@ import com.tuempresa.facturacion.domain.ports.out.CompraPersistencePort;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,7 +34,10 @@ public class CompraService implements RegistrarCompraUseCase {
         BigDecimal totalPagar = BigDecimal.ZERO;
 
         for (CompraItemCommand item : command.getItems()) {
-            BigDecimal subtotal = item.getCantidad().multiply(item.getPrecioUnitario());
+            BigDecimal precioConIgv = item.getPrecioUnitario();
+            BigDecimal precioSinIgv = precioConIgv.divide(new BigDecimal("1.18"), 6, RoundingMode.HALF_UP);
+            
+            BigDecimal subtotal = item.getCantidad().multiply(precioSinIgv);
             // Cálculo del IGV al 18% para compras
             BigDecimal igvItem = subtotal.multiply(new BigDecimal("0.18"));
             BigDecimal totalItem = subtotal.add(igvItem);
@@ -59,15 +63,18 @@ public class CompraService implements RegistrarCompraUseCase {
 
         List<CompraDetalle> detalles = command.getItems().stream()
                 .map(item -> {
+                    BigDecimal precioConIgv = item.getPrecioUnitario();
+                    BigDecimal precioSinIgv = precioConIgv.divide(new BigDecimal("1.18"), 6, RoundingMode.HALF_UP);
+                    
                     // Actualizar el stock y el costo promedio ponderado del producto
                     productoUseCase.registrarIngresoStock(item.getProductoId(), item.getCantidad(),
-                            item.getPrecioUnitario());
+                            precioSinIgv);
 
                     return CompraDetalle.builder()
                             .compraId(compraGuardada.getId())
                             .productoId(item.getProductoId())
                             .cantidad(item.getCantidad())
-                            .precioUnitario(item.getPrecioUnitario())
+                            .precioUnitario(precioSinIgv)
                             .build();
                 })
                 .collect(Collectors.toList());

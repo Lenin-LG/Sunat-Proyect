@@ -70,7 +70,11 @@ public class SunatSoapAdapter implements SunatSoapPort {
 
     private String extraerRucDesdeXml(Document doc) {
         try {
-            return xpathValue(doc, "//*[local-name()='AccountingSupplierParty']//*[local-name()='PartyIdentification']/*[local-name()='ID']");
+            String ruc = xpathValue(doc, "//*[local-name()='AccountingSupplierParty']//*[local-name()='PartyIdentification']/*[local-name()='ID']");
+            if (ruc == null || ruc.isBlank()) {
+                ruc = xpathValue(doc, "//*[local-name()='AccountingSupplierParty']/*[local-name()='CustomerAssignedAccountID']");
+            }
+            return ruc;
         } catch (Exception e) {
             return null;
         }

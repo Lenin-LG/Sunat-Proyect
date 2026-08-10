@@ -33,15 +33,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .headers(headers -> headers.frameOptions(frame -> frame.disable()))
-            .addFilterBefore(new JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .anyRequest().authenticated())
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+                .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -62,8 +62,7 @@ public class SecurityConfig {
                 .map(u -> new User(
                         u.getUsername(),
                         u.getPassword(),
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + u.getRol()))
-                ))
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + u.getRol()))))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
     }
 }
