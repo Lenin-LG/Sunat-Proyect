@@ -58,6 +58,7 @@ public class CompraMapper {
                         de.setProductoId(d.getProductoId());
                         de.setCantidad(d.getCantidad());
                         de.setPrecioUnitario(d.getPrecioUnitario());
+                        de.setCompra(entity);
                         return de;
                     })
                     .collect(Collectors.toList()));
