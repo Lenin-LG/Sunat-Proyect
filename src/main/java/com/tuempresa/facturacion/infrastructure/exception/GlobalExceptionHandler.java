@@ -26,4 +26,23 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "error", ex.getMessage(),
+                        "message", ex.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleGeneralException(Exception ex) {
+        ex.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "error", "Error interno del servidor",
+                        "message", "Ocurrió un error inesperado: " + ex.getMessage()
+                ));
+    }
 }
