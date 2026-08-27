@@ -423,7 +423,8 @@ public class XmlBuilderAdapter implements XmlBuilderPort {
         pricingRef.appendChild(altPrice);
         line.appendChild(pricingRef);
 
-        BigDecimal igvItem = valorVenta.multiply(IGV_PORCENTAJE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalItemConIgv = precioConIgv.multiply(item.getCantidad()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal igvItem = totalItemConIgv.subtract(valorVenta);
         BigDecimal bolsaAmount = BigDecimal.ZERO;
         if (item.getImpuestoBolsa() != null && item.getImpuestoBolsa().compareTo(BigDecimal.ZERO) > 0) {
             bolsaAmount = item.getImpuestoBolsa().multiply(item.getCantidad()).setScale(2, RoundingMode.HALF_UP);

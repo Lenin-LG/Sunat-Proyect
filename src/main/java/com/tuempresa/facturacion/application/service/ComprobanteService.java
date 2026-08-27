@@ -171,6 +171,7 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
         }
 
         BigDecimal totalGravada = BigDecimal.ZERO;
+        BigDecimal totalPagarCalculado = BigDecimal.ZERO;
         for (ItemCommand itemReq : command.getItems()) {
             ComprobanteDetalle detalle = new ComprobanteDetalle();
             detalle.setDescripcion(itemReq.getDescripcion());
@@ -187,14 +188,18 @@ public class ComprobanteService implements EmitirComprobanteUseCase {
             detalle.setImpuestoBolsa(itemReq.getImpuestoBolsa() != null ? itemReq.getImpuestoBolsa() : BigDecimal.ZERO);
             comprobante.getDetalles().add(detalle);
             totalGravada = totalGravada.add(detalle.getValorVenta());
+
+            BigDecimal itemTotalConIgv = precioConIgv.multiply(itemReq.getCantidad()).setScale(2, RoundingMode.HALF_UP);
+            totalPagarCalculado = totalPagarCalculado.add(itemTotalConIgv);
         }
 
         totalGravada = totalGravada.subtract(comprobante.getDescuentoGlobal()).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalIgv = totalGravada.multiply(IGV).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalPagar = totalPagarCalculado.subtract(comprobante.getDescuentoGlobal()).add(comprobante.getTotalImpuestoBolsa());
+        BigDecimal totalIgv = totalPagar.subtract(totalGravada).subtract(comprobante.getTotalImpuestoBolsa());
 
         comprobante.setTotalGravada(totalGravada);
         comprobante.setTotalIgv(totalIgv);
-        comprobante.setTotalPagar(totalGravada.add(totalIgv).add(comprobante.getTotalImpuestoBolsa()));
+        comprobante.setTotalPagar(totalPagar);
 
         return comprobante;
     }
